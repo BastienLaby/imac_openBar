@@ -29,7 +29,7 @@ ifeq ($(config),debug)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -Wall -g
   CXXFLAGS  += $(CFLAGS) 
   LDFLAGS   += -Lbin/debug
-  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread
+  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lsfml-audio
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
   LDDEPS    += bin/debug/libglfw.a bin/debug/libglew.a bin/debug/libstb.a bin/debug/libimgui.a
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)

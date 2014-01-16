@@ -24,6 +24,7 @@
 #include "glm/gtc/matrix_transform.hpp" // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include "glm/gtc/type_ptr.hpp" // glm::value_ptr
 
+
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
 #endif
@@ -107,9 +108,12 @@ void init_gui_states(GUIStates & guiStates)
     guiStates.playing = false;
 }
 
+
 int main( int argc, char **argv )
 {
-    int width = 800, height= 600;
+
+
+    int width = 1200, height= 675;
     float widthf = (float) width, heightf = (float) height;
     double t;
     float fps = 0.f;
@@ -208,20 +212,29 @@ int main( int argc, char **argv )
     // Apply shader
     GLuint program = shader.program;
     glUseProgram(program);
+
+    // Matrix
     GLuint projectionLocation = glGetUniformLocation(program, "Projection");
     GLuint viewLocation = glGetUniformLocation(program, "View");
     GLuint objectLocation = glGetUniformLocation(program, "Object");
+    
+    // Animate
     GLuint timeLocation = glGetUniformLocation(program, "Time");
     GLuint instanceCountLocation = glGetUniformLocation(program, "InstanceCount");
-    GLuint espacementLocation = glGetUniformLocation(program, "Espacement");
-    GLuint rotateRangeXLocation = glGetUniformLocation(program, "RotateRangeX");
-    GLuint rotateRangeYLocation = glGetUniformLocation(program, "RotateRangeY");
+    GLuint amplitudeLocation = glGetUniformLocation(program, "Amplitude");
+    GLuint spaceBetweenCubesLocation = glGetUniformLocation(program, "SpaceBetweenCubes");
+    
+    // Light
+    GLuint lightPositionLocation = glGetUniformLocation(program, "LightPosition");
+    GLuint lightDiffuseColorLocation = glGetUniformLocation(program, "LightDiffuseColor");
+    GLuint lightSpecularColorLocation = glGetUniformLocation(program, "LightSpecularColor");
+    GLuint lightDiffusePowerLocation = glGetUniformLocation(program, "LightDiffusePower");
+    GLuint lightSpecularHardnessLocation = glGetUniformLocation(program, "LightSpecularHardness");
 
-    GLuint diffuseLocation = glGetUniformLocation(program, "Diffuse");
-    GLuint specLocation = glGetUniformLocation(program, "Spec");
     GLuint cameraPositionLocation = glGetUniformLocation(program, "CameraPosition");
-    glUniform1i(diffuseLocation, 0);
-    glUniform1i(specLocation, 1);
+   
+    // glUniform1i(diffuseLocation, 0);
+    // glUniform1i(specLocation, 1);
 
 
     // Load geometry
@@ -320,25 +333,8 @@ int main( int argc, char **argv )
                             -1, 0, 0,
                             -1, 0, 0};
     
-    int plane_triangleCount = 2;
-    int plane_triangleList[] = {0, 1, 2,
-                                2, 1, 3}; 
-    float plane_uvs[] = {0.f, 0.f,
-                         0.f, 1.f,
-                         1.f, 0.f,
-                         1.f, 1.f};
-    float plane_vertices[] = {-5.0, -1.0, 5.0,
-                            5.0, -1.0, 5.0,
-                            -5.0, -1.0, -5.0,
-                            5.0, -1.0, -5.0};
-    float plane_normals[] = {0, 1, 0,
-                             0, 1, 0,
-                             0, 1, 0,
-                             0, 1, 0};
 
-    //
     // Create and bind VAO and VBO
-    //
 
     // Create one vbo for each mesh attribute
     GLuint vbos[8];
@@ -369,27 +365,6 @@ int main( int argc, char **argv )
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
 
-    // Vind vao for the plane mesh
-    glBindVertexArray(vaos[1]);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[4]); // For indexes attribute
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_triangleList), plane_triangleList, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[5]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices), plane_vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[6]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_normals), plane_normals, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbos[7]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_uvs), plane_uvs, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-
     // Unbind everything. Potentially illegal on some implementations
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -397,11 +372,25 @@ int main( int argc, char **argv )
     // Viewport 
     glViewport( 0, 0, width, height  );
 
-    float timeStep = 0.1;
-    float timeSpend = 0;
-    float nb_cube_instance = 1.f;
-    float espacement = 1.f;
-    float rotateRangeX = 1, rotateRangeY = 1;
+    camera.eye.x = -4.6;
+    camera.eye.y = 5.1;
+    camera.eye.z = 7.3;
+
+    // Animation Loop variables
+    float timeStep = 0.1f;
+    float timeSpend = 0.f;
+    float nbCubeInstance = 9.f;
+    float amplitude = 0.3f;
+    float spaceBetweenCubes = 0.f;
+
+    // Lights Loop variables
+    glm::vec3 lightPosition(-0.7, 0.7, 0.7);
+    glm::vec4 lightDiffuseColor(0.47, 0.63, 0.15, 1);
+    glm::vec4 lightSpecularColor(0.02, 0.02, 0.18, 1);
+    float lightDiffusePower = 1.f;
+    float lightSpecularHardness = 0.7f;
+
+    bool checked = false;
 
     do
     {
@@ -489,37 +478,36 @@ int main( int argc, char **argv )
         // Select shader
         glUseProgram(program);
 
+        //
         // Upload uniforms
+        //
+
+        // Matrix
         glUniformMatrix4fv(projectionLocation, 1, 0, glm::value_ptr(projection));
         glUniformMatrix4fv(viewLocation, 1, 0, glm::value_ptr(worldToView));
         glUniformMatrix4fv(objectLocation, 1, 0, glm::value_ptr(objectToWorld));
-        glUniform1f(timeLocation, timeSpend);
-        glUniform1i(instanceCountLocation, (int)nb_cube_instance);
-        glUniform1f(espacementLocation, espacement);
-        glUniform1f(rotateRangeXLocation, rotateRangeX);
-        glUniform1f(rotateRangeYLocation, rotateRangeY);
-        glUniform3fv(cameraPositionLocation, 1, glm::value_ptr(camera.eye));
-
         
+        // Animation
+        glUniform1f(timeLocation, timeSpend);
+        glUniform1i(instanceCountLocation, (int)nbCubeInstance);
+        glUniform1f(amplitudeLocation, amplitude);
+        glUniform1f(spaceBetweenCubesLocation, spaceBetweenCubes);
+        
+        // Lights
+        glUniform3fv(cameraPositionLocation, 1, glm::value_ptr(camera.eye));
+        glUniform3fv(lightPositionLocation, 1, glm::value_ptr(lightPosition));
+        glUniform4fv(lightDiffuseColorLocation, 1, glm::value_ptr(lightDiffuseColor));
+        glUniform4fv(lightSpecularColorLocation, 1, glm::value_ptr(lightSpecularColor));
+        glUniform1f(lightDiffusePowerLocation, lightDiffusePower);
+        glUniform1f(lightSpecularHardnessLocation, lightSpecularHardness);
+
 
         //
         // Render vaos
         //
 
-        
-
         glBindVertexArray(vaos[0]);
-        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount*3, GL_UNSIGNED_INT, 0, (int)nb_cube_instance); // param count = taille du tableau d'indices
-
-        /*glUniform1f(timeLocation, 0);
-        glUniform1f(espacementLocation, 0);
-        glUniform1i(instanceCountLocation, 0);
-
-        glBindVertexArray(vaos[1]);
-        glDrawElements(GL_TRIANGLES, plane_triangleCount*3, GL_UNSIGNED_INT, 0); // param count = taille du tableau d'indices*/
-
-        // Vu qu'on a bindé une TOPOLOGIE (sous GL_ELEMENT_ARRAY_BUFFER), on utilise la méthode glDrawElements.
-        // Si par hasard on avait envoyé uniquement des arrays, on aurait très bien pu utiliser glDrawArrays
+        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount*3, GL_UNSIGNED_INT, 0, (int)nbCubeInstance); // param count = taille du tableau d'indices
 
 #if 1
         // Draw UI
@@ -540,14 +528,55 @@ int main( int argc, char **argv )
         imguiBeginFrame(mousex, mousey, mbut, mscroll);
         int logScroll = 0;
         char lineBuffer[512];
-        imguiBeginScrollArea("001", width - 210, height - 310, 200, 300, &logScroll);
-        sprintf(lineBuffer, "FPS %f", fps);
+
+        imguiBeginScrollArea("OpenBar", 0, 0, 200, height, &logScroll);
+
+        sprintf(lineBuffer, "FPS %f (%.1f, %.1f, %.1f)", fps, camera.eye.x, camera.eye.y, camera.eye.z);
         imguiLabel(lineBuffer);
-        imguiSlider("Rotate Speed", &timeStep, 0.0, 0.8, 0.01);
-        imguiSlider("Instances of cube", &nb_cube_instance, 0, 10, 1);
-        imguiSlider("Space between cubes", &espacement, 0, 5, 0.5);
-        imguiSlider("RotateRangeX", &rotateRangeX, 0, 3, 0.1);
-        imguiSlider("RotateRangeY", &rotateRangeY, 0, 3, 0.1);
+
+        imguiSeparatorLine();
+
+        imguiSlider("Speed", &timeStep, 0.0, 0.8, 0.01);
+        imguiSlider("Nb cubes", &nbCubeInstance, 1, 10000, 1);
+        int but33 = imguiButton("3x3");
+        int but55 = imguiButton("5x5");
+        int but77 = imguiButton("7x7");
+        int but99 = imguiButton("9x9");
+        if(but33) { nbCubeInstance = 9; }
+        if(but55) { nbCubeInstance = 25; }
+        if(but77) { nbCubeInstance = 49; }
+        if(but99) { nbCubeInstance = 81; }
+        imguiSlider("Amplitude", &amplitude, 0, 3, 0.1);
+        imguiSlider("Space Between Cubes", &spaceBetweenCubes, 0, 1, 0.01);
+
+        imguiSeparatorLine();
+
+        imguiLabel("Light Position");
+        imguiIndent();
+            imguiSlider("x", &lightPosition.x, -5, 10, 0.1);
+            imguiSlider("y", &lightPosition.y, -5, 10, 0.1);
+            imguiSlider("z", &lightPosition.z, -5, 10, 0.1);
+        imguiUnindent();
+        imguiLabel("Light Diffuse Color");
+        imguiIndent();
+            imguiSlider("r", &lightDiffuseColor.x, 0, 1, 0.01);
+            imguiSlider("g", &lightDiffuseColor.y, 0, 1, 0.01);
+            imguiSlider("b", &lightDiffuseColor.z, 0, 1, 0.01);
+            imguiSlider("a", &lightDiffuseColor.w, 0, 1, 0.01, false);
+            imguiSlider("power", &lightDiffusePower, 0, 5, 0.1);
+        imguiUnindent();
+        imguiLabel("Light Specular Color");
+        imguiIndent();
+            imguiSlider("r", &lightSpecularColor.x, 0, 1, 0.01);
+            imguiSlider("g", &lightSpecularColor.y, 0, 1, 0.01);
+            imguiSlider("b", &lightSpecularColor.z, 0, 1, 0.01);
+            imguiSlider("a", &lightSpecularColor.w, 0, 1, 0.01, false);
+            imguiSlider("hardness", &lightSpecularHardness, 0, 5, 0.1);
+        imguiUnindent();
+            
+        imguiDrawRect(160, 295, 15, 15, imguiRGBA(255*lightDiffuseColor.x, 255*lightDiffuseColor.y, 255*lightDiffuseColor.z, 255*lightDiffuseColor.w));
+        imguiDrawRect(160, 157, 15, 15, imguiRGBA(255*lightSpecularColor.x, 255*lightSpecularColor.y, 255*lightSpecularColor.z, 255*lightSpecularColor.w));
+
 
         imguiEndScrollArea();
         imguiEndFrame();
