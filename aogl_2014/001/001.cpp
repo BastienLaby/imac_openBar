@@ -175,25 +175,6 @@ int main( int argc, char **argv )
     GUIStates guiStates;
     init_gui_states(guiStates);
 
-    // Load images and upload textures
-    GLuint textures[2];
-    glGenTextures(2, textures);
-    int x;
-    int y;
-    int comp;
-
-    unsigned char * diffuse = stbi_load("textures/spnza_bricks_a_diff.tga", &x, &y, &comp, 3);
-    //
-    // Load into a GL texture
-    //
-    fprintf(stderr, "Diffuse %dx%d:%d\n", x, y, comp);
-
-    unsigned char * spec = stbi_load("textures/spnza_bricks_a_spec.tga", &x, &y, &comp, 1);
-    //
-    // Load into a GL texture
-    //
-    fprintf(stderr, "Spec %dx%d:%d\n", x, y, comp);
-
     glerr = glGetError();
     if(glerr != GL_NO_ERROR)
         fprintf(stderr, "2nd OpenGL Error : %s\n", gluErrorString(glerr));
@@ -233,8 +214,39 @@ int main( int argc, char **argv )
 
     GLuint cameraPositionLocation = glGetUniformLocation(program, "CameraPosition");
    
-    // glUniform1i(diffuseLocation, 0);
-    // glUniform1i(specLocation, 1);
+    // Textures
+    GLuint diffuseTextureLocation = glGetUniformLocation(program, "DiffuseTexture");
+    GLuint specularTextureLocation = glGetUniformLocation(program, "SpecularTexture");
+
+    //
+    // Load images and upload textures
+    //
+
+    GLuint textures[2];
+    glGenTextures(2, textures);
+    int x;
+    int y;
+    int comp;
+
+    unsigned char * diffuse = stbi_load("textures/spnza_bricks_a_diff.tga", &x, &y, &comp, 3);
+    fprintf(stderr, "Diffuse %dx%d:%d\n", x, y, comp);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, diffuse);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glUniform1i(diffuseTextureLocation, 1);
+
+    unsigned char * spec = stbi_load("textures/spnza_bricks_a_spec.tga", &x, &y, &comp, 1);
+    fprintf(stderr, "Spec %dx%d:%d\n", x, y, comp);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, x, y, 0, GL_RED, GL_UNSIGNED_BYTE, spec);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glUniform1i(specularTextureLocation, 2);
 
 
     // Load geometry
@@ -380,14 +392,14 @@ int main( int argc, char **argv )
     float timeStep = 0.1f;
     float timeSpend = 0.f;
     float nbCubeInstance = 9.f;
-    float amplitude = 0.3f;
+    float amplitude = 0.2f;
     float spaceBetweenCubes = 0.f;
 
     // Lights Loop variables
-    glm::vec3 lightPosition(-0.7, 0.7, 0.7);
+    glm::vec3 lightPosition(-8.67, 2.70, -6.63);
     glm::vec4 lightDiffuseColor(0.47, 0.63, 0.15, 1);
-    glm::vec4 lightSpecularColor(0.02, 0.02, 0.18, 1);
-    float lightDiffusePower = 1.f;
+    glm::vec4 lightSpecularColor(0, 0, 0, 1);
+    float lightDiffusePower = 0.1f;
     float lightSpecularHardness = 0.7f;
 
     bool checked = false;
@@ -509,6 +521,9 @@ int main( int argc, char **argv )
         glBindVertexArray(vaos[0]);
         glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount*3, GL_UNSIGNED_INT, 0, (int)nbCubeInstance); // param count = taille du tableau d'indices
 
+        // Draw light
+        //glDrawElement(GL_TRIANGLES, cube_triangleCount*3, GL_UNSIGNED_INT, 0);
+
 #if 1
         // Draw UI
         glDisable(GL_DEPTH_TEST);
@@ -553,9 +568,9 @@ int main( int argc, char **argv )
 
         imguiLabel("Light Position");
         imguiIndent();
-            imguiSlider("x", &lightPosition.x, -5, 10, 0.1);
-            imguiSlider("y", &lightPosition.y, -5, 10, 0.1);
-            imguiSlider("z", &lightPosition.z, -5, 10, 0.1);
+            imguiSlider("x", &lightPosition.x, -50, 50, 0.01);
+            imguiSlider("y", &lightPosition.y, -50, 50, 0.01);
+            imguiSlider("z", &lightPosition.z, -50, 50, 0.01);
         imguiUnindent();
         imguiLabel("Light Diffuse Color");
         imguiIndent();
