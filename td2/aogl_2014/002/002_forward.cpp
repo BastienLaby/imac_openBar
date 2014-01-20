@@ -223,11 +223,21 @@ int main( int argc, char **argv )
     GLuint specLocation = glGetUniformLocation(program, "Spec");
     GLuint intensityLocation = glGetUniformLocation(program, "Intensity");
     GLuint cameraPositionLocation = glGetUniformLocation(program, "CameraPosition");
+
     GLuint lightPositionLocation = glGetUniformLocation(program, "LightPosition");
     GLuint lightIntensityLocation = glGetUniformLocation(program, "LightIntensity");
     GLuint diffuseColorLocation = glGetUniformLocation(program, "DiffuseColor");
     GLuint specularColorLocation = glGetUniformLocation(program, "SpecularColor");
     GLuint specularFactorLocation = glGetUniformLocation(program, "SpecularFactor");
+
+    GLuint lightPositionLocation2 = glGetUniformLocation(program, "LightPosition2");
+    GLuint lightIntensityLocation2 = glGetUniformLocation(program, "LightIntensity2");
+    GLuint diffuseColorLocation2 = glGetUniformLocation(program, "DiffuseColor2");
+    GLuint specularColorLocation2 = glGetUniformLocation(program, "SpecularColor2");
+    GLuint specularFactorLocation2 = glGetUniformLocation(program, "SpecularFactor2");
+
+    GLuint spotLightExternalAngleLocation = glGetUniformLocation(program, "SpotLightExternalAngle");
+    GLuint spotLightInternalAngleLocation = glGetUniformLocation(program, "SpotLightInternalAngle");
 
 
     // Load geometry
@@ -306,6 +316,19 @@ int main( int argc, char **argv )
     glm::vec3 diffuseColor(1.0, 1.0, 1.0);
     glm::vec3 specularColor(1.0, 1.0, 1.0);
     float specularFactor = 100.f;
+
+    glm::vec3 lightPosition2(1.0, 0.0, 10);
+    float lightIntensity2 = 1.0f;
+    glm::vec3 diffuseColor2(1.0, 0.0, 0.0);
+    glm::vec3 specularColor2(1.0, 1.0, 1.0);
+    float specularFactor2 = 100.f;
+
+    float spotLightInternal = M_PI/32;
+    float spotLightExternal = M_PI/16;
+
+    bool checkedLight1 = true;
+    bool checkedLight2 = false;
+    bool checkedLight3 = false;
 
     do
     {
@@ -397,11 +420,21 @@ int main( int argc, char **argv )
         glUniform1f(intensityLocation, intensity);
         glUniform1i(diffuseLocation, 0);
         glUniform1i(specLocation, 1);
+        
         glUniform3fv(lightPositionLocation, 1, glm::value_ptr(lightPosition));
         glUniform1f(lightIntensityLocation, lightIntensity);
         glUniform3fv(diffuseColorLocation, 1, glm::value_ptr(diffuseColor));
         glUniform3fv(specularColorLocation, 1, glm::value_ptr(specularColor));
         glUniform1f(specularFactorLocation, specularFactor);
+
+        glUniform3fv(lightPositionLocation2, 1, glm::value_ptr(lightPosition2));
+        glUniform1f(lightIntensityLocation2, lightIntensity2);
+        glUniform3fv(diffuseColorLocation2, 1, glm::value_ptr(diffuseColor2));
+        glUniform3fv(specularColorLocation2, 1, glm::value_ptr(specularColor2));
+        glUniform1f(specularFactorLocation2, specularFactor2);
+
+        glUniform1f(spotLightInternalAngleLocation, spotLightInternal);
+        glUniform1f(spotLightExternalAngleLocation, spotLightExternal);
 
         // Render vaos
         glBindVertexArray(vao[0]);
@@ -432,27 +465,88 @@ int main( int argc, char **argv )
         sprintf(lineBuffer, "FPS %f", fps);
         imguiLabel(lineBuffer);
         
+        int toggle = 0;
+        toggle = imguiCollapse("Light1", "", checkedLight1);
+            
+        if(checkedLight1)
+        { 
+            imguiIndent();
+            imguiIndent();
+                imguiLabel("Light Position");
+                imguiIndent();
+                    imguiSlider("x", &lightPosition.x, -10, 10, 0.01);
+                    imguiSlider("y", &lightPosition.y, -10, 10, 0.01);
+                    imguiSlider("z", &lightPosition.z, -10, 10, 0.01);
+                imguiUnindent();
+                imguiSlider("Light Intensity", &lightIntensity, 0, 3, 0.01);
+                imguiLabel("Diffuse Color");
+                imguiIndent();
+                    imguiSlider("r", &diffuseColor.x, 0, 1, 0.001);
+                    imguiSlider("g", &diffuseColor.y, 0, 1, 0.001);
+                    imguiSlider("b", &diffuseColor.z, 0, 1, 0.001);
+                imguiUnindent();
+                imguiLabel("Specular Color");
+                imguiIndent();
+                    imguiSlider("r", &specularColor.x, 0, 1, 0.001);
+                    imguiSlider("g", &specularColor.y, 0, 1, 0.001);
+                    imguiSlider("b", &specularColor.z, 0, 1, 0.001);
+                imguiUnindent();
+                imguiSlider("Specular Intensity", &specularFactor, 0, 100, 1);
+            imguiUnindent();
+            imguiUnindent();
+        }
+        if (toggle)
+        {
+            checkedLight1 = !checkedLight1;
+        }
 
-        imguiLabel("Light Position");
-        imguiIndent();
-            imguiSlider("x", &lightPosition.x, -10, 10, 0.01);
-            imguiSlider("y", &lightPosition.y, -10, 10, 0.01);
-            imguiSlider("z", &lightPosition.z, -10, 10, 0.01);
-        imguiUnindent();
-        imguiSlider("Light Intensity", &lightIntensity, 0, 3, 0.01);
-        imguiLabel("Diffuse Color");
-        imguiIndent();
-            imguiSlider("r", &diffuseColor.x, 0, 1, 0.001);
-            imguiSlider("g", &diffuseColor.y, 0, 1, 0.001);
-            imguiSlider("b", &diffuseColor.z, 0, 1, 0.001);
-        imguiUnindent();
-        imguiLabel("Specular Color");
-        imguiIndent();
-            imguiSlider("r", &specularColor.x, 0, 1, 0.001);
-            imguiSlider("g", &specularColor.y, 0, 1, 0.001);
-            imguiSlider("b", &specularColor.z, 0, 1, 0.001);
-        imguiUnindent();
-        imguiSlider("Specular Intensity", &specularFactor, 0, 100, 1);
+        toggle = imguiCollapse("Light2", "", checkedLight2);
+        if(checkedLight2)
+        { 
+            imguiIndent();
+            imguiIndent();
+                imguiLabel("Light Position");
+                imguiIndent();
+                    imguiSlider("x", &lightPosition2.x, -10, 10, 0.01);
+                    imguiSlider("y", &lightPosition2.y, -10, 10, 0.01);
+                    imguiSlider("z", &lightPosition2.z, -10, 10, 0.01);
+                imguiUnindent();
+                imguiSlider("Light Intensity", &lightIntensity2, 0, 3, 0.01);
+                imguiLabel("Diffuse Color");
+                imguiIndent();
+                    imguiSlider("r", &diffuseColor2.x, 0, 1, 0.001);
+                    imguiSlider("g", &diffuseColor2.y, 0, 1, 0.001);
+                    imguiSlider("b", &diffuseColor2.z, 0, 1, 0.001);
+                imguiUnindent();
+                imguiLabel("Specular Color");
+                imguiIndent();
+                    imguiSlider("r", &specularColor2.x, 0, 1, 0.001);
+                    imguiSlider("g", &specularColor2.y, 0, 1, 0.001);
+                    imguiSlider("b", &specularColor2.z, 0, 1, 0.001);
+                imguiUnindent();
+                imguiSlider("Specular Intensity", &specularFactor2, 0, 100, 1);
+            imguiUnindent();
+            imguiUnindent();
+        }
+        if (toggle)
+        {
+            checkedLight2 = !checkedLight2;
+        }
+
+        toggle = imguiCollapse("SpotLight", "", checkedLight3);
+        if(checkedLight3)
+        { 
+            imguiIndent();
+            imguiIndent();
+                imguiSlider("External Angle", &spotLightExternal, 0, 2, 0.01);
+                imguiSlider("Internal Angle", &spotLightInternal, 0, 2, 0.01);
+            imguiUnindent();
+            imguiUnindent();
+        }
+        if (toggle)
+        {
+            checkedLight3 = !checkedLight3;
+        }
 
         imguiEndScrollArea();
         imguiEndFrame();
