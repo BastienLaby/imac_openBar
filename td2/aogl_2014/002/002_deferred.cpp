@@ -219,6 +219,7 @@ int main( int argc, char **argv )
     GLuint gbuffer_timeLocation = glGetUniformLocation(gbuffer_shader.program, "Time");
     GLuint gbuffer_diffuseLocation = glGetUniformLocation(gbuffer_shader.program, "Diffuse");
     GLuint gbuffer_specLocation = glGetUniformLocation(gbuffer_shader.program, "Spec");
+    GLuint gbuffer_renderModeLocation = glGetUniformLocation(gbuffer_shader.program, "RenderMode");
 
     // Load Blit shader
     ShaderGLSL blit_shader;
@@ -253,6 +254,7 @@ int main( int argc, char **argv )
     GLuint lighting_lightPositionLocation = glGetUniformLocation(lighting_shader.program, "LightPosition");
     GLuint lighting_lightColorLocation = glGetUniformLocation(lighting_shader.program, "LightColor");
     GLuint lighting_lightIntensityLocation = glGetUniformLocation(lighting_shader.program, "LightIntensity");
+    
 
     // Load geometry
     int   cube_triangleCount = 12;
@@ -349,6 +351,14 @@ int main( int argc, char **argv )
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+    // Create normal texture
+    glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     // Create depth texture
     glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
@@ -363,9 +373,11 @@ int main( int argc, char **argv )
 
     // Attach textures to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, gbufferTextures[0], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1 , GL_TEXTURE_2D, gbufferTextures[1], 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gbufferTextures[2], 0);
     gbufferDrawBuffers[0] = GL_COLOR_ATTACHMENT0;
     gbufferDrawBuffers[1] = GL_COLOR_ATTACHMENT1;
+    // Note : la profondeur se remplit automatiquement.
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -373,6 +385,9 @@ int main( int argc, char **argv )
         exit( EXIT_FAILURE );
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Data
+    int renderMode = 0;
 
     do
     {
@@ -463,6 +478,8 @@ int main( int argc, char **argv )
         glUniform1i(gbuffer_diffuseLocation, 0);
         glUniform1i(gbuffer_specLocation, 1);
 
+        glUniform1i(gbuffer_renderModeLocation, renderMode);
+
         // Bind textures
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -470,10 +487,61 @@ int main( int argc, char **argv )
         glBindTexture(GL_TEXTURE_2D, textures[1]);
 
         // Render vaos
+        /*glBindVertexArray(vao[0]);
+        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 4);
+        glBindVertexArray(vao[1]);
+        glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);*/
+        
+        //
+        // Remplissage du buffer personnalisé
+        //
+
+        // Bind buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Activer la liste des buffers dans lesquels dessiner
+        glDrawBuffers(2, gbufferDrawBuffers);
+
+        // Dessin de la scène directement dans le personnal buffer bindé
         glBindVertexArray(vao[0]);
         glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 4);
         glBindVertexArray(vao[1]);
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+         // Debind personnal buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        //
+        // Dessin des textures remplies du FrameBuffer
+        //
+
+        
+        glDisable(GL_DEPTH_TEST);
+
+        glUseProgram(blit_shader.program);        
+        glUniform1i(blit_tex1Location, 0); // Le shader utilisera la texture bindée sur l'unité de texture 0
+        glActiveTexture(GL_TEXTURE0); // On active le bonne unité de texture. LEs futurs bind se feront dessus. Donc le shader prendra la texture actuellement bindée.
+
+        // Quad 1/3
+        glViewport(0, 0, width/3, height/4);
+        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
+        glBindVertexArray(vao[2]); // Pour dessiner le quad
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        // Quad 2/3
+        glViewport(width/3, 0, width/3, height/4);
+        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        // Quad 3/3
+        glViewport(2*width/3, 0, width/3, height/4);
+        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+
+
+       
 
 #if 1
         // Draw UI
@@ -498,6 +566,21 @@ int main( int argc, char **argv )
         sprintf(lineBuffer, "FPS %f", fps);
         imguiLabel(lineBuffer);
         imguiSlider("Lights", &numLights, 0.0, 100.0, 1.0);
+
+        int diffuseMode = imguiButton("Diffuse");
+        if(diffuseMode) {renderMode = 0;}
+
+        int specularMode = imguiButton("Specular");
+        if(specularMode) {renderMode = 3;}
+
+        int positionMode = imguiButton("Position");
+        if(positionMode) {renderMode = 1;}
+
+        int normalMode = imguiButton("Normal");
+        if(normalMode) {renderMode = 2;}
+
+
+            
         imguiEndScrollArea();
         imguiEndFrame();
         imguiRenderGLDraw(width, height); 
@@ -515,7 +598,8 @@ int main( int argc, char **argv )
 
         // Swap buffers
         glfwSwapBuffers();
-
+        double newTime = glfwGetTime();
+        fps = 1.f/ (newTime - t);
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey( GLFW_KEY_ESC ) != GLFW_PRESS &&
            glfwGetWindowParam( GLFW_OPENED ) );

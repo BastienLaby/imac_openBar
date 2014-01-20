@@ -26,6 +26,8 @@ void main(void)
 uniform vec3 CameraPosition;
 uniform float Time;
 
+uniform int RenderMode;
+
 in vec2 uv;
 in vec3 position;
 in vec3 normal;
@@ -38,7 +40,31 @@ out vec4  Normal;
 
 void main(void)
 {
-	Color = vec4(1.0, 0.0, 1.0, 1.0);
+	/*if(RenderMode == 0)
+	{
+		Color = texture(Diffuse, uv);
+	}
+	else if(RenderMode == 1)
+	{
+		Color = vec4(position, 1);
+	}
+	else if(RenderMode == 2)
+	{
+		Color = vec4(normal, 1);
+	}
+	else if(RenderMode == 3)
+	{
+		spec = texture(Spec, uv);
+		Color = vec4(spec.x, spec.x, spec.x, 1);
+	}
+	else
+	{
+		Color = vec4(1, 1, 1, 1);
+	}*/
+
+	Color = vec4(texture(Diffuse, uv).rgb, texture(Spec, uv).x);
+	Normal = vec4(normal, 1);
+	
 }
 
 #endif
