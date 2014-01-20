@@ -460,7 +460,7 @@ int main( int argc, char **argv )
         glm::mat4 screenToWorld = glm::transpose(glm::inverse(worldToScreen));
 
         // Viewport 
-        glViewport( 0, 0, width, height  );
+        glViewport( 0, 0, width, height);
 
         // Default states
         glEnable(GL_DEPTH_TEST);
@@ -477,33 +477,25 @@ int main( int argc, char **argv )
         glUniform1f(gbuffer_timeLocation, t);
         glUniform1i(gbuffer_diffuseLocation, 0);
         glUniform1i(gbuffer_specLocation, 1);
-
-        glUniform1i(gbuffer_renderModeLocation, renderMode);
-
-        // Bind textures
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textures[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, textures[1]);
-
-        // Render vaos
-        /*glBindVertexArray(vao[0]);
-        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 4);
-        glBindVertexArray(vao[1]);
-        glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);*/
         
         //
         // Remplissage du buffer personnalisé
         //
 
-        // Bind buffer
+        // Bind personnal buffer
         glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Activer la liste des buffers dans lesquels dessiner
         glDrawBuffers(2, gbufferDrawBuffers);
+        
+        // Rendu : Bind textures
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textures[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, textures[1]);
 
-        // Dessin de la scène directement dans le personnal buffer bindé
+        // Rendu : Dessin de la scène directement dans le personnal buffer bindé
         glBindVertexArray(vao[0]);
         glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 4);
         glBindVertexArray(vao[1]);
@@ -516,12 +508,11 @@ int main( int argc, char **argv )
         // Dessin des textures remplies du FrameBuffer
         //
 
-        
         glDisable(GL_DEPTH_TEST);
 
         glUseProgram(blit_shader.program);        
         glUniform1i(blit_tex1Location, 0); // Le shader utilisera la texture bindée sur l'unité de texture 0
-        glActiveTexture(GL_TEXTURE0); // On active le bonne unité de texture. LEs futurs bind se feront dessus. Donc le shader prendra la texture actuellement bindée.
+        glActiveTexture(GL_TEXTURE0); // On active le bonne unité de texture. Les futurs bind se feront dessus. Donc le shader prendra la texture actuellement bindée.
 
         // Quad 1/3
         glViewport(0, 0, width/3, height/4);
@@ -538,10 +529,6 @@ int main( int argc, char **argv )
         glViewport(2*width/3, 0, width/3, height/4);
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-
-
-       
 
 #if 1
         // Draw UI
