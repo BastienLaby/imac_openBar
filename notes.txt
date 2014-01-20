@@ -1,0 +1,11 @@
+Early-Z-Projection : Si deux primitives recouvrent les mêmes fragments, ces mêmes fragments sont "shadés" deux fois dans le fragment shader.
+	Problème : baisse de performances !
+	Deux algos testés ici : Le Forward Shading (classique) et le Deffered Shading (optimistion)
+	Ces deux algos sont utilisés dans l'industrie aujourd'hui car le Forward Shading permet de faire varier de façon très importante les matériaux d'un pixel à l'autre alors que celà couterai assez cher d'implémenter de telles variations en Deferred Shading. De plus, le Deffered est plus compliqué à coder que le Forward.
+
+Pour chaque fragment illuminé :
+	Paramètre diffus : le n_dot_l (on voit toujours la même chose en fonction de la position)
+	Paramètre spéculaire : le n_dot_h (la position de la personne qui regarde rentre en compte)
+Dans la vraie vie, aucun modèle est soit totalement diffus, soit totalement spéculaire. C'est toujours un mélange des deux.
+
+L'illumination n'a pas d'espace de calcul privilégié. L'important est d'effectuer les calculs avec tous les paramètres dans le même référentiel. Après, c'est une question de choix. Chaque espace a ses avantages et ses inconvénients.

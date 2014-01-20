@@ -223,6 +223,12 @@ int main( int argc, char **argv )
     GLuint specLocation = glGetUniformLocation(program, "Spec");
     GLuint intensityLocation = glGetUniformLocation(program, "Intensity");
     GLuint cameraPositionLocation = glGetUniformLocation(program, "CameraPosition");
+    GLuint lightPositionLocation = glGetUniformLocation(program, "LightPosition");
+    GLuint lightIntensityLocation = glGetUniformLocation(program, "LightIntensity");
+    GLuint diffuseColorLocation = glGetUniformLocation(program, "DiffuseColor");
+    GLuint specularColorLocation = glGetUniformLocation(program, "SpecularColor");
+    GLuint specularFactorLocation = glGetUniformLocation(program, "SpecularFactor");
+
 
     // Load geometry
     int cube_triangleCount = 12;
@@ -294,6 +300,12 @@ int main( int argc, char **argv )
     glViewport( 0, 0, width, height  );
 
     // Default states
+
+    glm::vec3 lightPosition(0.0, 1.0, 10);
+    float lightIntensity = 1.0f;
+    glm::vec3 diffuseColor(1.0, 1.0, 1.0);
+    glm::vec3 specularColor(1.0, 1.0, 1.0);
+    float specularFactor = 100.f;
 
     do
     {
@@ -385,6 +397,11 @@ int main( int argc, char **argv )
         glUniform1f(intensityLocation, intensity);
         glUniform1i(diffuseLocation, 0);
         glUniform1i(specLocation, 1);
+        glUniform3fv(lightPositionLocation, 1, glm::value_ptr(lightPosition));
+        glUniform1f(lightIntensityLocation, lightIntensity);
+        glUniform3fv(diffuseColorLocation, 1, glm::value_ptr(diffuseColor));
+        glUniform3fv(specularColorLocation, 1, glm::value_ptr(specularColor));
+        glUniform1f(specularFactorLocation, specularFactor);
 
         // Render vaos
         glBindVertexArray(vao[0]);
@@ -411,10 +428,32 @@ int main( int argc, char **argv )
         imguiBeginFrame(mousex, mousey, mbut, mscroll);
         int logScroll = 0;
         char lineBuffer[512];
-        imguiBeginScrollArea("001", width - 210, height - 310, 200, 300, &logScroll);
+        imguiBeginScrollArea("001", 0, 0, 200, height, &logScroll);
         sprintf(lineBuffer, "FPS %f", fps);
         imguiLabel(lineBuffer);
-        imguiSlider("intensity", &intensity, 0.0, 10.0, 0.01);
+        
+
+        imguiLabel("Light Position");
+        imguiIndent();
+            imguiSlider("x", &lightPosition.x, -10, 10, 0.01);
+            imguiSlider("y", &lightPosition.y, -10, 10, 0.01);
+            imguiSlider("z", &lightPosition.z, -10, 10, 0.01);
+        imguiUnindent();
+        imguiSlider("Light Intensity", &lightIntensity, 0, 3, 0.01);
+        imguiLabel("Diffuse Color");
+        imguiIndent();
+            imguiSlider("r", &diffuseColor.x, 0, 1, 0.001);
+            imguiSlider("g", &diffuseColor.y, 0, 1, 0.001);
+            imguiSlider("b", &diffuseColor.z, 0, 1, 0.001);
+        imguiUnindent();
+        imguiLabel("Specular Color");
+        imguiIndent();
+            imguiSlider("r", &specularColor.x, 0, 1, 0.001);
+            imguiSlider("g", &specularColor.y, 0, 1, 0.001);
+            imguiSlider("b", &specularColor.z, 0, 1, 0.001);
+        imguiUnindent();
+        imguiSlider("Specular Intensity", &specularFactor, 0, 100, 1);
+
         imguiEndScrollArea();
         imguiEndFrame();
         imguiRenderGLDraw(width, height); 
