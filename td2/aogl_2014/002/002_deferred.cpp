@@ -3,6 +3,10 @@
 #include <string.h>
 #include <string>
 #include <iostream>
+#include <time.h>
+#include <sstream>
+
+#include <vector>
 
 #include "glew/glew.h"
 #ifdef __APPLE__
@@ -172,8 +176,7 @@ int main( int argc, char **argv )
     GUIStates guiStates;
     init_gui_states(guiStates);
 
-    // GUI
-    float numLights = 10.f;
+
 
     // Load images and upload textures
     GLuint textures[3];
@@ -216,10 +219,15 @@ int main( int argc, char **argv )
     GLuint gbuffer_projectionLocation = glGetUniformLocation(gbuffer_shader.program, "Projection");
     GLuint gbuffer_viewLocation = glGetUniformLocation(gbuffer_shader.program, "View");
     GLuint gbuffer_objectLocation = glGetUniformLocation(gbuffer_shader.program, "Object");
-    GLuint gbuffer_timeLocation = glGetUniformLocation(gbuffer_shader.program, "Time");
+    
     GLuint gbuffer_diffuseLocation = glGetUniformLocation(gbuffer_shader.program, "Diffuse");
     GLuint gbuffer_specLocation = glGetUniformLocation(gbuffer_shader.program, "Spec");
-    GLuint gbuffer_renderModeLocation = glGetUniformLocation(gbuffer_shader.program, "RenderMode");
+
+    // Animate
+    GLuint gbuffer_timeLocation = glGetUniformLocation(gbuffer_shader.program, "Time");
+    GLuint gbuffer_instanceCountLocation = glGetUniformLocation(gbuffer_shader.program, "InstanceCount");
+    GLuint gbuffer_amplitudeLocation = glGetUniformLocation(gbuffer_shader.program, "Amplitude");
+    GLuint gbuffer_spaceBetweenCubesLocation = glGetUniformLocation(gbuffer_shader.program, "SpaceBetweenCubes");
 
     // Load Blit shader
     ShaderGLSL blit_shader;
@@ -249,11 +257,14 @@ int main( int argc, char **argv )
     GLuint lighting_materialLocation = glGetUniformLocation(lighting_shader.program, "Material");
     GLuint lighting_normalLocation = glGetUniformLocation(lighting_shader.program, "Normal");
     GLuint lighting_depthLocation = glGetUniformLocation(lighting_shader.program, "Depth");
+    GLuint lighting_timeLocation = glGetUniformLocation(lighting_shader.program, "Time");
     GLuint lighting_inverseViewProjectionLocation = glGetUniformLocation(lighting_shader.program, "InverseViewProjection");
     GLuint lighting_cameraPositionLocation = glGetUniformLocation(lighting_shader.program, "CameraPosition");
     GLuint lighting_lightPositionLocation = glGetUniformLocation(lighting_shader.program, "LightPosition");
-    GLuint lighting_lightColorLocation = glGetUniformLocation(lighting_shader.program, "LightColor");
+    GLuint lighting_lightDiffuseColorLocation = glGetUniformLocation(lighting_shader.program, "LightDiffuseColor");
+    GLuint lighting_lightSpecularColorLocation = glGetUniformLocation(lighting_shader.program, "LightSpecColor");
     GLuint lighting_lightIntensityLocation = glGetUniformLocation(lighting_shader.program, "LightIntensity");
+    GLuint lighting_projectionLocation = glGetUniformLocation(lighting_shader.program, "Projection");
     
 
     // Load geometry
@@ -386,8 +397,23 @@ int main( int argc, char **argv )
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Data
-    int renderMode = 0;
+    // Light data
+    srand (time(NULL));
+
+    std::vector<glm::vec3> pointLightsPositions;
+    std::vector<glm::vec3> pointLightsDiffuseColors;
+    std::vector<glm::vec3> pointLightsSpecularColors;
+    std::vector<float> pointLightsIntensities;
+    std::vector<bool> pointLightCollapses;
+
+    float numPointLights = 0.f;
+
+    // Animation Data
+    float timeStep = 0.1f;
+    float timeSpend = 0.f;
+    float nbCubeInstance = 9.f;
+    float amplitude = 0.2f;
+    float spaceBetweenCubes = 0.f;
 
     do
     {
@@ -459,6 +485,12 @@ int main( int argc, char **argv )
         glm::mat4 worldToScreen = projection * worldToView;
         glm::mat4 screenToWorld = glm::transpose(glm::inverse(worldToScreen));
 
+        timeSpend += timeStep;
+        if(timeSpend > 2*3.1415)
+        {
+            timeSpend = 0;
+        }
+
         // Viewport 
         glViewport( 0, 0, width, height);
 
@@ -470,6 +502,7 @@ int main( int argc, char **argv )
 
         // Bind gbuffer shader
         glUseProgram(gbuffer_shader.program);
+        
         // Upload uniforms
         glUniformMatrix4fv(gbuffer_projectionLocation, 1, 0, glm::value_ptr(projection));
         glUniformMatrix4fv(gbuffer_viewLocation, 1, 0, glm::value_ptr(worldToView));
@@ -477,6 +510,10 @@ int main( int argc, char **argv )
         glUniform1f(gbuffer_timeLocation, t);
         glUniform1i(gbuffer_diffuseLocation, 0);
         glUniform1i(gbuffer_specLocation, 1);
+        glUniform1f(gbuffer_timeLocation, timeSpend);
+        glUniform1i(gbuffer_instanceCountLocation, (int)nbCubeInstance);
+        glUniform1f(gbuffer_amplitudeLocation, amplitude);
+        glUniform1f(gbuffer_spaceBetweenCubesLocation, spaceBetweenCubes);
         
         //
         // Remplissage du buffer personnalisé
@@ -497,12 +534,61 @@ int main( int argc, char **argv )
 
         // Rendu : Dessin de la scène directement dans le personnal buffer bindé
         glBindVertexArray(vao[0]);
-        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 4);
-        glBindVertexArray(vao[1]);
-        glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, nbCubeInstance);
+        //glBindVertexArray(vao[1]);
+        //glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
          // Debind personnal buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        //
+        // Rendu de la scène avec plusieurs lumières
+        //
+
+        glUseProgram(lighting_shader.program);
+
+        glUniformMatrix4fv(lighting_projectionLocation, 1, 0, glm::value_ptr(projection));
+        glUniform1i(lighting_materialLocation, 0);
+        glUniform1i(lighting_normalLocation, 1);
+        glUniform1i(lighting_depthLocation, 2);
+        glUniform3fv(lighting_cameraPositionLocation, 1, glm::value_ptr(camera.eye));
+        glUniformMatrix4fv(lighting_inverseViewProjectionLocation, 1, 0, glm::value_ptr(screenToWorld));
+        glUniform1f(lighting_timeLocation, t);
+
+        // On bin les trois textures du framebuffer pour les utiliser dans le shader
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);    
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+
+        // On dessine un quad pour chaque lumière
+
+        glViewport( 0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glDisable(GL_DEPTH_TEST);
+        glBindVertexArray(vao[2]);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+
+        for (unsigned int i = 0; i < numPointLights; ++i)
+        {
+            glm::vec3 pos = pointLightsPositions[i];
+            glm::vec3 diff = pointLightsDiffuseColors[i];
+            glm::vec3 spec = pointLightsSpecularColors[i];
+            float lightPosition[3] = {pos.x, pos.y, pos.z};
+            float lightDiffuseColor[3] = {diff.r, diff.g, diff.b};
+            float lightSpecColor[3] = {spec.r, spec.g, spec.b};
+            glUniform3fv(lighting_lightPositionLocation, 1, lightPosition);
+            glUniform3fv(lighting_lightDiffuseColorLocation, 1, lightDiffuseColor);
+            glUniform3fv(lighting_lightSpecularColorLocation, 1, lightSpecColor);
+            glUniform1f(lighting_lightIntensityLocation, pointLightsIntensities[i]);
+            glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        }
+
+        glDisable(GL_BLEND);
 
         //
         // Dessin des textures remplies du FrameBuffer
@@ -530,6 +616,8 @@ int main( int argc, char **argv )
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
+
+
 #if 1
         // Draw UI
         glDisable(GL_DEPTH_TEST);
@@ -549,25 +637,86 @@ int main( int argc, char **argv )
         imguiBeginFrame(mousex, mousey, mbut, mscroll);
         int logScroll = 0;
         char lineBuffer[512];
-        imguiBeginScrollArea("001", width - 210, height - 310, 200, 300, &logScroll);
+        imguiBeginScrollArea("Deferred Shading", 0, height/4, 200, 3*height/4, &logScroll);
         sprintf(lineBuffer, "FPS %f", fps);
         imguiLabel(lineBuffer);
-        imguiSlider("Lights", &numLights, 0.0, 100.0, 1.0);
 
-        int diffuseMode = imguiButton("Diffuse");
-        if(diffuseMode) {renderMode = 0;}
+        imguiSeparatorLine();
 
-        int specularMode = imguiButton("Specular");
-        if(specularMode) {renderMode = 3;}
+        imguiSlider("Speed", &timeStep, 0.0, 0.8, 0.01);
+        imguiSlider("Nb cubes", &nbCubeInstance, 1, 10000, 1);
+        int but33 = imguiButton("3x3");
+        int but55 = imguiButton("5x5");
+        int but77 = imguiButton("7x7");
+        int but99 = imguiButton("9x9");
+        if(but33) { nbCubeInstance = 9; }
+        if(but55) { nbCubeInstance = 25; }
+        if(but77) { nbCubeInstance = 49; }
+        if(but99) { nbCubeInstance = 81; }
+        imguiSlider("Amplitude", &amplitude, 0, 3, 0.1);
+        imguiSlider("Space Between Cubes", &spaceBetweenCubes, 0, 1, 0.01);
 
-        int positionMode = imguiButton("Position");
-        if(positionMode) {renderMode = 1;}
+        imguiSeparatorLine();
 
-        int normalMode = imguiButton("Normal");
-        if(normalMode) {renderMode = 2;}
+        sprintf(lineBuffer, "%1.0f PointLights", numPointLights);
+        imguiLabel(lineBuffer);
+        int button_addPL = imguiButton("Add PointLight");
+        if(button_addPL)
+        {
+            pointLightsPositions.push_back(glm::vec3(((numPointLights/8)*10+10)*cos(numPointLights*M_PI/4), 2.25, ((numPointLights/8)*10+10)*sin(numPointLights*M_PI/4)));
+            pointLightsDiffuseColors.push_back(glm::vec3(cos(numPointLights/10), sin(numPointLights/10), 0/*1- cos(numPointLights/10)*/));
+            pointLightsSpecularColors.push_back(glm::vec3(1, 1, 1));
+            pointLightsIntensities.push_back(1.f);
+            pointLightCollapses.push_back(false);
+            numPointLights++;
+        }
+
+        for (unsigned int i = 0; i < numPointLights; ++i)
+        {
+            std::ostringstream ss;
+            ss << (i+1);
+            std::string s(ss.str());
+            int toggle = imguiCollapse("Point Light", s.c_str(), pointLightCollapses[i]);
+            if(pointLightCollapses[i])
+            {
+                imguiIndent();
+                    imguiSlider("Intensity", &pointLightsIntensities[i], 0, 10, 0.1);
+                    imguiLabel("Position :");
+                    imguiIndent();
+                        imguiSlider("x", &pointLightsPositions[i].x, -10, 10, 0.01);
+                        imguiSlider("y", &pointLightsPositions[i].y, -10, 10, 0.01);
+                        imguiSlider("z", &pointLightsPositions[i].z, -10, 10, 0.01);
+                    imguiUnindent();
+                    imguiLabel("Diffuse :");
+                    imguiIndent();
+                        imguiSlider("r", &pointLightsDiffuseColors[i].x, 0, 1, 0.01);
+                        imguiSlider("g", &pointLightsDiffuseColors[i].y, 0, 1, 0.01);
+                        imguiSlider("b", &pointLightsDiffuseColors[i].z, 0, 1, 0.01);
+                    imguiUnindent();
+                    imguiLabel("Specular :");
+                    imguiIndent();
+                        imguiSlider("r", &pointLightsSpecularColors[i].x, 0, 1, 0.01);
+                        imguiSlider("g", &pointLightsSpecularColors[i].y, 0, 1, 0.01);
+                        imguiSlider("b", &pointLightsSpecularColors[i].z, 0, 1, 0.01);
+                    imguiUnindent();
+                    int removeLight = imguiButton("Remove");
+                    if(removeLight)
+                    {
+                        pointLightsPositions.erase(pointLightsPositions.begin() + i);
+                        pointLightsDiffuseColors.erase(pointLightsDiffuseColors.begin() + i);
+                        pointLightsSpecularColors.erase(pointLightsSpecularColors.begin() + i);
+                        pointLightsIntensities.erase(pointLightsIntensities.begin() + i);
+                        pointLightCollapses.erase(pointLightCollapses.begin() + i);
+                        numPointLights--;
+                    }
+                imguiUnindent();
+            }
+            if(toggle) { pointLightCollapses[i] = !pointLightCollapses[i]; }
+        }
+
+        imguiSeparatorLine();
 
 
-            
         imguiEndScrollArea();
         imguiEndFrame();
         imguiRenderGLDraw(width, height); 
