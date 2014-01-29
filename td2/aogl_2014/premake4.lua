@@ -63,12 +63,12 @@ solution "advanced_opengl_imac3_exercises"
       kind "ConsoleApp"
       language "C++"
       files { "002/002_forward.cpp"}
-      includedirs { "lib/glfw/include", "src", "common", "lib/" }
+      includedirs { "lib/glfw/include", "src", "common", "lib/", "/usr/local/"}
       links {"glfw", "glew", "stb", "imgui"}
       defines { "GLEW_STATIC" }
      
       configuration { "linux" }
-         links {"X11","Xrandr", "rt", "GL", "GLU", "pthread"}
+         links {"X11","Xrandr", "rt", "GL", "GLU", "pthread", "sndfile"}
        
       configuration { "windows" }
          links {"glu32","opengl32", "gdi32", "winmm", "user32"}
@@ -91,12 +91,12 @@ solution "advanced_opengl_imac3_exercises"
       kind "ConsoleApp"
       language "C++"
       files { "002/002_deferred.cpp"}
-      includedirs { "lib/glfw/include", "src", "common", "lib/" }
+      includedirs { "lib/glfw/include", "src", "common", "lib/", "/usr/local/"}
       links {"glfw", "glew", "stb", "imgui"}
       defines { "GLEW_STATIC" }
      
       configuration { "linux" }
-         links {"X11","Xrandr", "rt", "GL", "GLU", "pthread"}
+         links {"X11","Xrandr", "rt", "GL", "GLU", "pthread", "sndfile"}
        
       configuration { "windows" }
          links {"glu32","opengl32", "gdi32", "winmm", "user32"}

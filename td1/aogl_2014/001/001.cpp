@@ -113,7 +113,7 @@ int main( int argc, char **argv )
 {
 
 
-    int width = 1200, height= 675;
+    int width = 1920, height= 1080;
     float widthf = (float) width, heightf = (float) height;
     double t;
     float fps = 0.f;
@@ -133,13 +133,14 @@ int main( int argc, char **argv )
     glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
     // Open a window and create its OpenGL context
-    if( !glfwOpenWindow( width, height, 0,0,0,0, 24, 0, GLFW_WINDOW ) )
+    if( !glfwOpenWindow( width, height, 0,0,0,0, 24, 0, GLFW_FULLSCREEN ) )
     {
         fprintf( stderr, "Failed to open GLFW window\n" );
 
         glfwTerminate();
         exit( EXIT_FAILURE );
     }
+    glfwEnable( GLFW_MOUSE_CURSOR );
 
     glfwSetWindowTitle( "001_a" );
 
@@ -583,7 +584,7 @@ int main( int argc, char **argv )
             imguiSlider("b", &lightSpecularColor.z, 0, 1, 0.01);
         imguiUnindent();
             
-        imguiDrawRect(160, 157, 15, 15, imguiRGBA(255*lightSpecularColor.x, 255*lightSpecularColor.y, 255*lightSpecularColor.z, 255*lightSpecularColor.w));
+        imguiDrawRect(160, 678, 15, 15, imguiRGBA(255*lightSpecularColor.x, 255*lightSpecularColor.y, 255*lightSpecularColor.z, 255*lightSpecularColor.w));
 
         imguiEndScrollArea();
         imguiEndFrame();
