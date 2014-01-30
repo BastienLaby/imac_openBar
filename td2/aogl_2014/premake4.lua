@@ -91,12 +91,12 @@ solution "advanced_opengl_imac3_exercises"
       kind "ConsoleApp"
       language "C++"
       files { "002/002_deferred.cpp"}
-      includedirs { "lib/glfw/include", "src", "common", "lib/", "/usr/local/"}
-      links {"glfw", "glew", "stb", "imgui"}
+      includedirs { "lib/glfw/include", "src", "common", "lib/", "/usr/local/", "lib/fmod/lib/", "lib/fmod/inc/"}
+      links {"glfw", "glew", "stb", "imgui", "fmod"}
       defines { "GLEW_STATIC" }
      
       configuration { "linux" }
-         links {"X11","Xrandr", "rt", "GL", "GLU", "pthread", "sndfile"}
+         links {"X11","Xrandr", "rt", "GL", "GLU", "pthread", "fmodex64"}
        
       configuration { "windows" }
          links {"glu32","opengl32", "gdi32", "winmm", "user32"}
@@ -138,6 +138,23 @@ solution "advanced_opengl_imac3_exercises"
          defines { }
          buildoptions { " -fno-common" }
          linkoptions { "-framework OpenGL", "-framework Cocoa", "-framework IOKit" }
+
+      configuration "Debug"
+         defines { "DEBUG" }
+         flags { "Symbols" }
+         targetdir "bin/debug"
+
+      configuration "Release"
+         defines { "NDEBUG" }
+         flags { "Optimize" }    
+         targetdir "bin/release"
+
+   -- FMOD Library --
+   project "fmod"
+      kind "StaticLib"
+      language "C++"
+      files { "lib/fmod/inc/*.h", "lib/fmod/inc/*.hpp"}
+      includedirs { "lib/fmod/lib", "lib/fmod/inc"}
 
       configuration "Debug"
          defines { "DEBUG" }

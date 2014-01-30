@@ -28,8 +28,7 @@
 #include "glm/gtc/matrix_transform.hpp" // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include "glm/gtc/type_ptr.hpp" // glm::value_ptr
 
-#include <sndfile.h>
-
+#include <fmod.h>
 
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
@@ -129,43 +128,31 @@ void make_tfd(double* signal, double* tfd, size_t N)
 int main( int argc, char **argv )
 {
 
-    /*size_t N = 4;
+     FMOD_SYSTEM *system;
+    FMOD_SOUND *musique;
+    FMOD_CHANNEL *canal;
+    FMOD_RESULT resultat;
 
-    double* input = new double[N];
-    for(size_t i = 0; i < N; i++) { input[i] = i; }
+    FMOD_System_Create(&system);
+
+    FMOD_System_Init(system, 1, FMOD_INIT_NORMAL, NULL);
     
-    double* tfd = new double[N]();
+    /* On ouvre la musique */
+    resultat = FMOD_System_CreateSound(system, "sounds/sound1.wav", FMOD_SOFTWARE | FMOD_2D | FMOD_CREATESTREAM, 0, &musique);
+
+    /* On vérifie si elle a bien été ouverte (IMPORTANT) */
+    if (resultat != FMOD_OK)
+    {
+        fprintf(stderr, "Impossible de lire le fichier mp3\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* On joue la musique */
+    FMOD_System_PlaySound(system, FMOD_CHANNEL_FREE, musique, 0, NULL);
     
-    for(size_t i = 0; i < N; i++) { std::cout << tfd[i] << ", "; } std::cout << std::endl;
+    /* On récupère le pointeur du canal */
+    FMOD_System_GetChannel(system, 0, &canal);
 
-    make_tfd(input, tfd, N);
-
-    for(size_t i = 0; i < N; i++) { std::cout << tfd[i] << ", "; } std::cout << std::endl;*/
-
-    SF_INFO* info = new SF_INFO;
-    SNDFILE* file = sf_open("sounds/sound1.wav", SFM_READ, info);
-    int error = sf_error(file);
-
-    std::cout << "frames : " << info->frames << std::endl;
-    std::cout << "samplerate : " << info->samplerate << std::endl;
-    std::cout << "channels : " << info->channels << std::endl;
-    std::cout << "format : " << info->format << std::endl;
-    std::cout << "sections : " << info->sections << std::endl;
-    std::cout << "seekable : " << info->seekable << std::endl;
-
-    // Note : If multichannel, each item of the frame is stores consequently
-    // Exemple : frame1 --> 9(channel1) & 3(channel2)
-    //           frame2 --> 10          & 7
-    // Datas : [9, 3, 10, 7]
-
-    short data[2];
-    //sf_count_t items_read = sf_read_short(file, data, 2);
-    //for(sf_count_t i = 0; i < items_read; i=i+1) { std::cout << data[i] << std::endl; } std::cout << std::endl;
-
-    sf_count_t frames_read = sf_readf_short(file, data, 1);
-    for(sf_count_t i = 0; i < frames_read; i=i+2) { std::cout << data[i] << " | " << data[i+1] << std::endl; }   
-
-    delete info;
 
     int width = 1920, height = 1080;
     float widthf = (float) width, heightf = (float) height;
