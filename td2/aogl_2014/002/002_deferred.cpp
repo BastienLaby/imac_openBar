@@ -190,8 +190,6 @@ glfwEnable( GLFW_MOUSE_CURSOR );
     GUIStates guiStates;
     init_gui_states(guiStates);
 
-
-
     // Load images and upload textures
     GLuint textures[3];
     glGenTextures(3, textures);
