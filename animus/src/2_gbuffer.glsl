@@ -35,8 +35,10 @@ void main(void)
 #endif
 
 #if defined(FRAGMENT)
+
 uniform vec3 CameraPosition;
 uniform float Time;
+uniform int RenderLightModel;
 
 in vec2 uv;
 in vec3 position;
@@ -53,7 +55,18 @@ out vec4  Normal;
 void main(void)
 {
 	Color = vec4(texture(Diffuse, uv).rgb, texture(Spec, uv).x);
-	Normal = vec4(normal, 1);
+	if(RenderLightModel == 1) {
+		vec3 newNormal;
+		newNormal.x = sqrt(pow(normal.x, 2));
+		newNormal.y = sqrt(pow(normal.x, 2));
+		newNormal.z = sqrt(pow(normal.x, 2));
+		Normal = vec4(newNormal, 1);
+
+	}
+	else {
+		Normal = vec4(normal, 1);
+	}
+	
 }
 
 #endif

@@ -24,14 +24,14 @@ ifeq ($(config),debug)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/Animusd
   DEFINES   += -DGLEW_STATIC -DDEBUG
-  INCLUDES  += -Ilib/glfw/include -Isrc -Icommon -Ilib -I/usr/local -Ilib/fmod/lib -Ilib/fmod/inc
+  INCLUDES  += -Ilib/glfw/include -Ilib/fmod/inc -Isrc -Icommon -Ilib
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -Wall -g
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -Lbin/debug
-  LIBS      += -lglfw -lglew -lstb -limgui -lfmod -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
+  LDFLAGS   += -Llib/stb -Llib/fmod -Llib/glew -Llib/glm -Llib/imgui -Llib/glfw -Llib/fmod/lib -Llib/fmod/inc -Llib/glm/gtx -Llib/glm/detail -Llib/glm/virtrev -Llib/glm/gtc -Llib/glfw/lib -Llib/glfw/include -Llib/glfw/lib/x11 -Llib/glfw/lib/carbon -Llib/glfw/lib/cocoa -Llib/glfw/lib/win32 -Llib/glfw/include/GL -Lbin/debug
+  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
-  LDDEPS    += bin/debug/libglfw.a bin/debug/libglew.a bin/debug/libstb.a bin/debug/libimgui.a bin/debug/libfmod.a
+  LDDEPS    += bin/debug/libglfw.a bin/debug/libstb.a bin/debug/libimgui.a
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -46,14 +46,14 @@ ifeq ($(config),release)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/Animusr
   DEFINES   += -DGLEW_STATIC -DNDEBUG
-  INCLUDES  += -Ilib/glfw/include -Isrc -Icommon -Ilib -I/usr/local -Ilib/fmod/lib -Ilib/fmod/inc
+  INCLUDES  += -Ilib/glfw/include -Ilib/fmod/inc -Isrc -Icommon -Ilib
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s -Lbin/release
-  LIBS      += -lglfw -lglew -lstb -limgui -lfmod -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
+  LDFLAGS   += -s -Llib/stb -Llib/fmod -Llib/glew -Llib/glm -Llib/imgui -Llib/glfw -Llib/fmod/lib -Llib/fmod/inc -Llib/glm/gtx -Llib/glm/detail -Llib/glm/virtrev -Llib/glm/gtc -Llib/glfw/lib -Llib/glfw/include -Llib/glfw/lib/x11 -Llib/glfw/lib/carbon -Llib/glfw/lib/cocoa -Llib/glfw/lib/win32 -Llib/glfw/include/GL -Lbin/release
+  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
-  LDDEPS    += bin/release/libglfw.a bin/release/libglew.a bin/release/libstb.a bin/release/libimgui.a bin/release/libfmod.a
+  LDDEPS    += bin/release/libglfw.a bin/release/libstb.a bin/release/libimgui.a
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -68,14 +68,14 @@ ifeq ($(config),debug64)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/Animusd
   DEFINES   += -DGLEW_STATIC -DDEBUG
-  INCLUDES  += -Ilib/glfw/include -Isrc -Icommon -Ilib -I/usr/local -Ilib/fmod/lib -Ilib/fmod/inc
+  INCLUDES  += -Ilib/glfw/include -Ilib/fmod/inc -Isrc -Icommon -Ilib
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -Wall -g -m64
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -m64 -L/usr/lib64 -Lbin/debug
-  LIBS      += -lglfw -lglew -lstb -limgui -lfmod -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
+  LDFLAGS   += -m64 -L/usr/lib64 -Llib/stb -Llib/fmod -Llib/glew -Llib/glm -Llib/imgui -Llib/glfw -Llib/fmod/lib -Llib/fmod/inc -Llib/glm/gtx -Llib/glm/detail -Llib/glm/virtrev -Llib/glm/gtc -Llib/glfw/lib -Llib/glfw/include -Llib/glfw/lib/x11 -Llib/glfw/lib/carbon -Llib/glfw/lib/cocoa -Llib/glfw/lib/win32 -Llib/glfw/include/GL -Lbin/debug
+  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
-  LDDEPS    += bin/debug/libglfw.a bin/debug/libglew.a bin/debug/libstb.a bin/debug/libimgui.a bin/debug/libfmod.a
+  LDDEPS    += bin/debug/libglfw.a bin/debug/libstb.a bin/debug/libimgui.a
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -90,14 +90,14 @@ ifeq ($(config),release64)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/Animusr
   DEFINES   += -DGLEW_STATIC -DNDEBUG
-  INCLUDES  += -Ilib/glfw/include -Isrc -Icommon -Ilib -I/usr/local -Ilib/fmod/lib -Ilib/fmod/inc
+  INCLUDES  += -Ilib/glfw/include -Ilib/fmod/inc -Isrc -Icommon -Ilib
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -m64
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s -m64 -L/usr/lib64 -Lbin/release
-  LIBS      += -lglfw -lglew -lstb -limgui -lfmod -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
+  LDFLAGS   += -s -m64 -L/usr/lib64 -Llib/stb -Llib/fmod -Llib/glew -Llib/glm -Llib/imgui -Llib/glfw -Llib/fmod/lib -Llib/fmod/inc -Llib/glm/gtx -Llib/glm/detail -Llib/glm/virtrev -Llib/glm/gtc -Llib/glfw/lib -Llib/glfw/include -Llib/glfw/lib/x11 -Llib/glfw/lib/carbon -Llib/glfw/lib/cocoa -Llib/glfw/lib/win32 -Llib/glfw/include/GL -Lbin/release
+  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
-  LDDEPS    += bin/release/libglfw.a bin/release/libglew.a bin/release/libstb.a bin/release/libimgui.a bin/release/libfmod.a
+  LDDEPS    += bin/release/libglfw.a bin/release/libstb.a bin/release/libimgui.a
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -112,14 +112,14 @@ ifeq ($(config),debug32)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/Animusd
   DEFINES   += -DGLEW_STATIC -DDEBUG
-  INCLUDES  += -Ilib/glfw/include -Isrc -Icommon -Ilib -I/usr/local -Ilib/fmod/lib -Ilib/fmod/inc
+  INCLUDES  += -Ilib/glfw/include -Ilib/fmod/inc -Isrc -Icommon -Ilib
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -Wall -g -m32
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -m32 -L/usr/lib32 -Lbin/debug
-  LIBS      += -lglfw -lglew -lstb -limgui -lfmod -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
+  LDFLAGS   += -m32 -L/usr/lib32 -Llib/stb -Llib/fmod -Llib/glew -Llib/glm -Llib/imgui -Llib/glfw -Llib/fmod/lib -Llib/fmod/inc -Llib/glm/gtx -Llib/glm/detail -Llib/glm/virtrev -Llib/glm/gtc -Llib/glfw/lib -Llib/glfw/include -Llib/glfw/lib/x11 -Llib/glfw/lib/carbon -Llib/glfw/lib/cocoa -Llib/glfw/lib/win32 -Llib/glfw/include/GL -Lbin/debug
+  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
-  LDDEPS    += bin/debug/libglfw.a bin/debug/libglew.a bin/debug/libstb.a bin/debug/libimgui.a bin/debug/libfmod.a
+  LDDEPS    += bin/debug/libglfw.a bin/debug/libstb.a bin/debug/libimgui.a
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
   define PREBUILDCMDS
   endef
@@ -134,14 +134,14 @@ ifeq ($(config),release32)
   TARGETDIR  = .
   TARGET     = $(TARGETDIR)/Animusr
   DEFINES   += -DGLEW_STATIC -DNDEBUG
-  INCLUDES  += -Ilib/glfw/include -Isrc -Icommon -Ilib -I/usr/local -Ilib/fmod/lib -Ilib/fmod/inc
+  INCLUDES  += -Ilib/glfw/include -Ilib/fmod/inc -Isrc -Icommon -Ilib
   CPPFLAGS  += -MMD -MP $(DEFINES) $(INCLUDES)
   CFLAGS    += $(CPPFLAGS) $(ARCH) -O2 -m32
   CXXFLAGS  += $(CFLAGS) 
-  LDFLAGS   += -s -m32 -L/usr/lib32 -Lbin/release
-  LIBS      += -lglfw -lglew -lstb -limgui -lfmod -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
+  LDFLAGS   += -s -m32 -L/usr/lib32 -Llib/stb -Llib/fmod -Llib/glew -Llib/glm -Llib/imgui -Llib/glfw -Llib/fmod/lib -Llib/fmod/inc -Llib/glm/gtx -Llib/glm/detail -Llib/glm/virtrev -Llib/glm/gtc -Llib/glfw/lib -Llib/glfw/include -Llib/glfw/lib/x11 -Llib/glfw/lib/carbon -Llib/glfw/lib/cocoa -Llib/glfw/lib/win32 -Llib/glfw/include/GL -Lbin/release
+  LIBS      += -lglfw -lglew -lstb -limgui -lX11 -lXrandr -lrt -lGL -lGLU -lpthread -lfmodex64
   RESFLAGS  += $(DEFINES) $(INCLUDES) 
-  LDDEPS    += bin/release/libglfw.a bin/release/libglew.a bin/release/libstb.a bin/release/libimgui.a bin/release/libfmod.a
+  LDDEPS    += bin/release/libglfw.a bin/release/libstb.a bin/release/libimgui.a
   LINKCMD    = $(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS) $(RESOURCES) $(ARCH) $(LIBS)
   define PREBUILDCMDS
   endef

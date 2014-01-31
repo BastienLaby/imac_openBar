@@ -119,9 +119,12 @@ int main( int argc, char **argv )
     init_gui_states(guiStates);
 
     // Init viewer structures
-    Camera camera;
-    camera_defaults(camera);
-    
+    Camera camera1;
+    camera_defaults(camera1);
+    Camera camera2;
+    camera_defaults(camera2);
+    Camera currentCamera = camera1;
+
     //
     // OPENGL RESOURCES INITIALISATION
     //
@@ -393,17 +396,17 @@ int main( int argc, char **argv )
                     zoomDir = -1.f;
                 else if (diffLockPositionX < 0 )
                     zoomDir = 1.f;
-                camera_zoom(camera, zoomDir * GUIStates::MOUSE_ZOOM_SPEED);
+                camera_zoom(currentCamera, zoomDir * GUIStates::MOUSE_ZOOM_SPEED);
             }
             else if (guiStates.turnLock)
             {
-                camera_turn(camera, diffLockPositionY * GUIStates::MOUSE_TURN_SPEED,
+                camera_turn(currentCamera, diffLockPositionY * GUIStates::MOUSE_TURN_SPEED,
                             diffLockPositionX * GUIStates::MOUSE_TURN_SPEED);
 
             }
             else if (guiStates.panLock)
             {
-                camera_pan(camera, diffLockPositionX * GUIStates::MOUSE_PAN_SPEED,
+                camera_pan(currentCamera, diffLockPositionX * GUIStates::MOUSE_PAN_SPEED,
                             diffLockPositionY * GUIStates::MOUSE_PAN_SPEED);
             }
             guiStates.lockPositionX = mousex;
@@ -412,7 +415,7 @@ int main( int argc, char **argv )
   
         // Get camera matrices
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 1000.f); 
-        glm::mat4 worldToView = glm::lookAt(camera.eye, camera.o, camera.up);
+        glm::mat4 worldToView = glm::lookAt(currentCamera.eye, currentCamera.o, currentCamera.up);
         glm::mat4 objectToWorld;
         glm::mat4 worldToScreen = projection * worldToView;
         glm::mat4 screenToWorld = glm::transpose(glm::inverse(worldToScreen));
@@ -506,7 +509,7 @@ int main( int argc, char **argv )
         glUniform1i(lighting_materialLocation, 0);
         glUniform1i(lighting_normalLocation, 1);
         glUniform1i(lighting_depthLocation, 2);
-        glUniform3fv(lighting_cameraPositionLocation, 1, glm::value_ptr(camera.eye));
+        glUniform3fv(lighting_cameraPositionLocation, 1, glm::value_ptr(currentCamera.eye));
         glUniformMatrix4fv(lighting_inverseViewProjectionLocation, 1, 0, glm::value_ptr(screenToWorld));
         glUniform1f(lighting_timeLocation, t);
 
@@ -598,6 +601,21 @@ int main( int argc, char **argv )
 
             int dfs = imguiButton("Show Deferred Shading");
             if(dfs) { showDeferrefTextures = !showDeferrefTextures; }
+
+            imguiSeparatorLine();
+
+            int buttonCamera1 = imguiButton("Camera1");
+            int buttonCamera2 = imguiButton("Camera2");
+            if(buttonCamera1) {
+                camera2 = currentCamera;
+                currentCamera = camera1;
+            }
+                
+            if(buttonCamera2) {
+                camera1 = currentCamera;
+                currentCamera = camera2;
+            }
+                
 
             imguiSeparatorLine();
 
