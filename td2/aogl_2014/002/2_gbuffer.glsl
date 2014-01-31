@@ -25,13 +25,12 @@ void main(void)
 	int square_size = int(floor(sqrt(InstanceCount-1))) + 1;
 	float total_size = square_size * (1+SpaceBetweenCubes);
 	
-	/*vec4 new_position = vec4(	VertexPosition.x + (gl_InstanceID%square_size) *(1+SpaceBetweenCubes) - total_size/2,
+	vec4 new_position = vec4(	VertexPosition.x + (gl_InstanceID%square_size) *(1+SpaceBetweenCubes) - total_size/2,
 							VertexPosition.y + Amplitude * cos(gl_InstanceID + Time),
 							VertexPosition.z + (gl_InstanceID/square_size) * (1+SpaceBetweenCubes) - total_size/2,
-							1.0);*/
+							1.0);
 
-	vec4 new_position = vec4(VertexPosition.x + SpectrumOffset, VertexPosition.y + gl_InstanceID, VertexPosition.z, 1);
-
+	
 	uv = VertexTexCoord;
 	normal = vec3(Object * vec4(VertexNormal, 1.0));
 	position = vec3(Object * new_position);

@@ -55,7 +55,14 @@ public:
 		}
 		else
 		{
-			FMOD_Channel_GetSpectrum(soundList[idSound].channel, spectrum, spectrumSize, 0,  FMOD_DSP_FFT_WINDOW_RECT);
+			float left[spectrumSize];
+			float right[spectrumSize];
+			FMOD_Channel_GetSpectrum(soundList[idSound].channel, left, spectrumSize, 0,  FMOD_DSP_FFT_WINDOW_RECT);
+			FMOD_Channel_GetSpectrum(soundList[idSound].channel, right, spectrumSize, 1,  FMOD_DSP_FFT_WINDOW_RECT);
+			for(size_t i = 0; i < spectrumSize; i++)
+			{
+				spectrum[i] = (left[i] + right[i])/2;
+			}
 		}
 	}
 

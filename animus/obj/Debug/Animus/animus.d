@@ -73,7 +73,8 @@ obj/Debug/Animus/animus.o: src/animus.cpp lib/glew/glew.h \
  lib/glm/gtc/../detail/type_mat4x3.hpp lib/glm/gtc/type_ptr.inl \
  src/CameraTools.hpp src/ShaderTools.hpp src/IMGUITools.hpp \
  src/SoundTools.hpp lib/fmod/inc/fmod.h lib/fmod/inc/fmod_codec.h \
- lib/fmod/inc/fmod_dsp.h lib/fmod/inc/fmod_memoryinfo.h
+ lib/fmod/inc/fmod_dsp.h lib/fmod/inc/fmod_memoryinfo.h \
+ src/LightManager.hpp
 
 lib/glew/glew.h:
 
@@ -350,3 +351,5 @@ lib/fmod/inc/fmod_codec.h:
 lib/fmod/inc/fmod_dsp.h:
 
 lib/fmod/inc/fmod_memoryinfo.h:
+
+src/LightManager.hpp:

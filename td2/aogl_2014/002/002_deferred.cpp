@@ -28,7 +28,6 @@
 #include "glm/gtc/matrix_transform.hpp" // glm::translate, glm::rotate, glm::scale, glm::perspective
 #include "glm/gtc/type_ptr.hpp" // glm::value_ptr
 
-#include <fmod.h>
 
 #ifndef DEBUG_PRINT
 #define DEBUG_PRINT 1
@@ -125,42 +124,8 @@ void make_tfd(double* signal, double* tfd, size_t N)
     }
 }
 
-
-#define TAILLE_SPECTRE 512
-
 int main( int argc, char **argv )
 {
-
-    FMOD_SYSTEM *system;
-    FMOD_SOUND *musique;
-    FMOD_CHANNEL *canal;
-    FMOD_RESULT resultat;
-
-    FMOD_System_Create(&system);
-
-    FMOD_System_Init(system, 1, FMOD_INIT_NORMAL, NULL);
-    
-    /* On ouvre la musique */
-    resultat = FMOD_System_CreateSound(system, "sounds/sound1.wav", FMOD_SOFTWARE | FMOD_2D | FMOD_CREATESTREAM, 0, &musique);
-
-    /* On vérifie si elle a bien été ouverte (IMPORTANT) */
-    if (resultat != FMOD_OK)
-    {
-        fprintf(stderr, "Impossible de lire le fichier mp3\n");
-        exit(EXIT_FAILURE);
-    }
-
-    /* On joue la musique */
-    FMOD_System_PlaySound(system, FMOD_CHANNEL_FREE, musique, 0, NULL);
-    
-    /* On récupère le pointeur du canal */
-    FMOD_System_GetChannel(system, 0, &canal);
-
-    float spectre[TAILLE_SPECTRE];
-
-
-
-
 
     int width = 1920, height = 1080;
     float widthf = (float) width, heightf = (float) height;
@@ -277,7 +242,6 @@ glfwEnable( GLFW_MOUSE_CURSOR );
     GLuint gbuffer_instanceCountLocation = glGetUniformLocation(gbuffer_shader.program, "InstanceCount");
     GLuint gbuffer_amplitudeLocation = glGetUniformLocation(gbuffer_shader.program, "Amplitude");
     GLuint gbuffer_spaceBetweenCubesLocation = glGetUniformLocation(gbuffer_shader.program, "SpaceBetweenCubes");
-    GLuint gbuffer_spectrumOffsetLocation = glGetUniformLocation(gbuffer_shader.program, "SpectrumOffset");
 
     // Load Blit shader
     ShaderGLSL blit_shader;
@@ -468,8 +432,6 @@ glfwEnable( GLFW_MOUSE_CURSOR );
     bool showDeferrefTextures = false;
     int showUI = true;
 
-    int spectrumStepLoop = 0;
-
     do
     {
 
@@ -592,32 +554,14 @@ glfwEnable( GLFW_MOUSE_CURSOR );
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textures[0]);
         glActiveTexture(GL_TEXTURE1);
+        
         glBindTexture(GL_TEXTURE_2D, textures[1]);
         // Rendu : Dessin de la scène directement dans le personnal buffer bindé
         glBindVertexArray(vao[0]);
         
-        // Call glDrawElementsInstanced for each "bar"
-        if(spectrumStepLoop < 3)
-        {
-            FMOD_Channel_GetSpectrum(canal, spectre, TAILLE_SPECTRE, 0,  FMOD_DSP_FFT_WINDOW_RECT);
-            spectrumStepLoop++;
-        }
-        else
-        {
-            spectrumStepLoop = 0;
-        }
+        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, nbCubeInstance);
 
-        for(size_t i = 0; i < TAILLE_SPECTRE; i++)
-        {
-            int barHeight = 1 + (int)(spectre[i] * 1000);
-            glUniform1i(gbuffer_spectrumOffsetLocation, i);
-            glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, barHeight);    
-        }
-        
-        //glBindVertexArray(vao[1]);
-        //glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-
-         // Debind personnal buffer
+        // Debind personnal buffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         //
@@ -833,10 +777,6 @@ glfwEnable( GLFW_MOUSE_CURSOR );
 
     // Clean UI
     imguiRenderGLDestroy();
-
-    FMOD_Sound_Release(musique);
-    FMOD_System_Close(system);
-    FMOD_System_Release(system);
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();

@@ -95,7 +95,6 @@ vec3 computeDirectionnalLight(vec3 lightDirection, vec3 diffuseColor, float ligh
 
 vec3 computeSpotLight(vec3 lightpos, vec3 lightDirection, float externeAngle, float interneAngle, vec3 diffuseColor, float lightIntensity, vec3 specColor, float specFactor)
 {
-
 	vec3 lumiere_surface = normalize(lightpos - position);
 	float cosAngle = dot(lumiere_surface, -normalize(lightDirection)) / length(lumiere_surface);
 
@@ -124,7 +123,6 @@ vec3 computeSpotLight(vec3 lightpos, vec3 lightDirection, float externeAngle, fl
 	float n_dot_l = clamp(dot(n, l), 0, 1.0);
 	float n_dot_h = clamp(dot(n, h), 0, 1.0);
 	return attenuation * diffuseColor * lightIntensity * (diffuse * n_dot_l + spec * specColor *  pow(n_dot_h, spec * specFactor));
-
 }
 
 #endif
