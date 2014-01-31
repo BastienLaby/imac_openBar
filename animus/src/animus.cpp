@@ -215,11 +215,6 @@ int main( int argc, char **argv )
     float cube_uvs[] = {0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 1.f,  1.f, 1.f,  0.f, 0.f, 0.f, 0.f, 1.f, 1.f,  1.f, 0.f,  };
     float cube_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5 };
     float cube_normals[] = {0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, };
-    int   plane_triangleCount = 2;
-    int   plane_triangleList[] = {0, 1, 2, 2, 1, 3}; 
-    float plane_uvs[] = {0.f, 0.f, 0.f, 10.f, 10.f, 0.f, 10.f, 10.f};
-    float plane_vertices[] = {-50.0, -1.0, 50.0, 50.0, -1.0, 50.0, -50.0, -1.0, -50.0, 50.0, -1.0, -50.0};
-    float plane_normals[] = {0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0};
     int   quad_triangleCount = 2;
     int   quad_triangleList[] = {0, 1, 2, 2, 1, 3}; 
     float quad_vertices[] =  {-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0};
@@ -252,27 +247,6 @@ int main( int argc, char **argv )
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
     glBufferData(GL_ARRAY_BUFFER, sizeof(cube_uvs), cube_uvs, GL_STATIC_DRAW);
-
-    // Plane
-    glBindVertexArray(vao[1]);
-    // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[4]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_triangleList), plane_triangleList, GL_STATIC_DRAW);
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[5]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices), plane_vertices, GL_STATIC_DRAW);
-    // Bind normals and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[6]);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_normals), plane_normals, GL_STATIC_DRAW);
-    // Bind uv coords and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[7]);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_uvs), plane_uvs, GL_STATIC_DRAW);
 
     // Quad
     glBindVertexArray(vao[2]);
@@ -513,8 +487,7 @@ int main( int argc, char **argv )
         for(size_t i = 0; i < lightManager.getNumPointLight(); i++)
         {
             glm::vec3 lastPos = lightManager.getPosition(i);
-            
-            lightManager.setPosition(i, glm::vec3(lastPos.x, 10*cos(t), 10*sin(t)));
+            lightManager.setPosition(i, glm::vec3(lastPos.x, 50*cos(t+i), 10*sin(t+i)));
             glUniformMatrix4fv(gbuffer_objectLocation, 1, 0, glm::value_ptr(glm::translate(objectToWorld, lightManager.getPosition(i))));
             glDrawElements(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
         }
@@ -642,10 +615,10 @@ int main( int argc, char **argv )
             {
                 unsigned int nbL = lightManager.getNumPointLight();
                 srand(time(NULL));
-                lightManager.addPointLight( glm::vec3(nbL*10, 10 + 5*cos(nbL), 5*cos(nbL)),
-                                            glm::vec3(cos(rand()), sin(rand()), 0),
+                lightManager.addPointLight( glm::vec3(nbL*10, 0, 0),
+                                            glm::vec3(cos(nbL), sin(nbL), 1),
                                             glm::vec3(1, 1, 1),
-                                            2.f,
+                                            5.f,
                                             false);
             }
 
@@ -659,7 +632,7 @@ int main( int argc, char **argv )
                 {
                     imguiIndent();
                         float intens = lightManager.getIntensity(i);
-                        imguiSlider("Intensity", &intens, 0, 10, 0.1); lightManager.setIntensity(i, intens);
+                        imguiSlider("Intensity", &intens, 0, 100, 0.1); lightManager.setIntensity(i, intens);
                         imguiLabel("Position :");
                         imguiIndent();
                             glm::vec3 pos = lightManager.getPosition(i);

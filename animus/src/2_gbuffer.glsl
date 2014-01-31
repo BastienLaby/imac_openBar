@@ -18,13 +18,15 @@ out vec3 position;
 void main(void)
 {
 	vec4 new_position;
-	if (RenderLightModel == 1)
+	if (RenderLightModel == 1) {
 		new_position = vec4(VertexPosition.x, VertexPosition.y, VertexPosition.z, 1);
-	else
+	}
+	else {
 		new_position = vec4(VertexPosition.x + SpectrumOffset, VertexPosition.y + gl_InstanceID, VertexPosition.z, 1);
+	}
 	
-	uv = VertexTexCoord;
 	normal = vec3(Object * vec4(VertexNormal, 1.0));
+	uv = VertexTexCoord;
 	position = vec3(Object * new_position);
 
 	gl_Position = Projection * View * Object * new_position;
