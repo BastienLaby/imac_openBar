@@ -90,7 +90,7 @@ in fData
 	vec2 uv;
     vec3 normal;
     vec3 position;
-}frag;
+};
 
 out vec4 Color;
 
