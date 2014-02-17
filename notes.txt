@@ -9,3 +9,16 @@ Pour chaque fragment illuminé :
 Dans la vraie vie, aucun modèle est soit totalement diffus, soit totalement spéculaire. C'est toujours un mélange des deux.
 
 L'illumination n'a pas d'espace de calcul privilégié. L'important est d'effectuer les calculs avec tous les paramètres dans le même référentiel. Après, c'est une question de choix. Chaque espace a ses avantages et ses inconvénients.
+
+/*****************************************************/
+OMBRES
+/*****************************************************/
+
+Les ombres permettent avant tout de donner une impression de relief (utilité première, avant le critère "ça fait joli"), de donner de l'information sur la position d'un objet.
+Il existe une méthode parfaite pour calculer les ombres qui consiste à envoyer des rayons depuis chaque pixel vers chaque lumière de la scène et de détecter des intersections avec d'autres objets de la scène. Cette technique n'est jamais utilisée car beaucoup trop lourde en temps.
+
+Une technique très compliquée, mais utilisée partout partout partout, c'est la technique des Shadow Map (technique multipass).
+On rend une première fois la scène vue de la lumière (rendu de profondeur). On obtient une texture de profondeur avec des valeurs entre 0 et 1.
+On rend la scène de façon classique. Pour chaque vertex, on retrouve la profondeur à partir de la position 3D (Espace MOnde -> Espace Image de la lumière. La matrice qui permet cette transformation est l'inverse de celle qui permet de rendre la lumière avec la shadowmap). Si la profondeur de la shadowmap est inférieur à la profondeur du point projetté sur la lumière, alors le point est dans l'ombre car obstrué par un autre objet de la scène.
+
+Artefacts = quand la position reconstruite est égale à la position stockée, la différence est aléatoire entre une face et une autre. Le biais sert à uniformiser ces valeurs (problème : le biais dépend de la précision de beaucoup de paramètres);

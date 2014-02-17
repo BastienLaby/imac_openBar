@@ -31,6 +31,7 @@ in vec3 normal;
 
 void main(void)
 {
+	Color = vec4(1, 1, 0, 1);
 }
 
 #endif

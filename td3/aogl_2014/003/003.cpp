@@ -110,7 +110,7 @@ void init_gui_states(GUIStates & guiStates)
 
 int main( int argc, char **argv )
 {
-    int width = 800, height=600;
+    int width = 1200, height=800;
     float widthf = (float) width, heightf = (float) height;
     double t;
     float fps = 0.f;
@@ -204,7 +204,11 @@ int main( int argc, char **argv )
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     fprintf(stderr, "Spec %dx%d:%d\n", x, y, comp);
 
-    // Try to load and compile shader
+    //
+    // Try to load and compile shaders
+    //
+
+    // Gbuffer
     int status;
     ShaderGLSL gbuffer_shader;
     const char * shaderFileGBuffer = "003/gbuffer.glsl";
@@ -267,15 +271,22 @@ int main( int argc, char **argv )
     GLuint lighting_materialLocation = glGetUniformLocation(lighting_shader.program, "Material");
     GLuint lighting_normalLocation = glGetUniformLocation(lighting_shader.program, "Normal");
     GLuint lighting_depthLocation = glGetUniformLocation(lighting_shader.program, "Depth");
+    GLuint lighting_shadowmapLocation = glGetUniformLocation(lighting_shader.program, "ShadowMap");
     GLuint lighting_inverseViewProjectionLocation = glGetUniformLocation(lighting_shader.program, "InverseViewProjection");
-    GLuint lighting_projectionLightLocation = glGetUniformLocation(lighting_shader.program, "ProjectionLight");
+    GLuint lighting_worldToShadowmapLocation = glGetUniformLocation(lighting_shader.program, "WorldToShadowmap");
     GLuint lighting_cameraPositionLocation = glGetUniformLocation(lighting_shader.program, "CameraPosition");
     GLuint lighting_lightPositionLocation = glGetUniformLocation(lighting_shader.program, "LightPosition");
     GLuint lighting_lightDirectionLocation = glGetUniformLocation(lighting_shader.program, "LightDirection");
     GLuint lighting_lightColorLocation = glGetUniformLocation(lighting_shader.program, "LightColor");
     GLuint lighting_lightIntensityLocation = glGetUniformLocation(lighting_shader.program, "LightIntensity");
+    GLuint lighting_shadowBiasLocation = glGetUniformLocation(lighting_shader.program, "ShadowBias");
+    GLuint lighting_shadowNumSampleLocation = glGetUniformLocation(lighting_shader.program, "ShadowNumSamples");
+    GLuint lighting_shadowSpreadLocation = glGetUniformLocation(lighting_shader.program, "ShadowSpread");
 
+    //
     // Load geometry
+    //
+
     int   cube_triangleCount = 12;
     int   cube_triangleList[] = {0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7, 8, 9, 10, 10, 9, 11, 12, 13, 14, 14, 13, 15, 16, 17, 18, 19, 17, 20, 21, 22, 23, 24, 25, 26, };
     float cube_uvs[] = {0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 1.f,  1.f, 1.f,  0.f, 0.f, 0.f, 0.f, 1.f, 1.f,  1.f, 0.f,  };
@@ -355,13 +366,16 @@ int main( int argc, char **argv )
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    // Init GBuffer frame buffer
+    //
+    // FrameBuffer for deffered shading
+    //
+
     GLuint gbufferFbo;
     GLuint gbufferTextures[3];
     GLuint gbufferDrawBuffers[2];
     glGenTextures(3, gbufferTextures);
 
-    // Create color texture
+    // Color texture
     glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
     //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
@@ -370,7 +384,7 @@ int main( int argc, char **argv )
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // Create normal texture
+    // Normal texture
     glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
     //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
@@ -379,7 +393,7 @@ int main( int argc, char **argv )
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // Create depth texture
+    // Depth texture
     glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -404,7 +418,46 @@ int main( int argc, char **argv )
         exit( EXIT_FAILURE );
     }
 
+    //
+    // Shadow Buffer
+    //
+
+    GLuint shadowBuffer;
+    GLuint shadowBufferTexture;
+    glGenTextures(1, &shadowBufferTexture);
+
+    // Create ShadowMap
+    glBindTexture(GL_TEXTURE_2D, shadowBufferTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Create shadow framebuffer
+    glGenFramebuffers(1, &shadowBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
+
+    // Attach textures to shadow framebuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowBufferTexture, 0);
+
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        fprintf(stderr, "Error on building framebuffer\n");
+        exit( EXIT_FAILURE );
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //
+    // GO
+    //
+
+    glm::vec3 lightPosition(5.f, 5.f, 5.f);
+    glm::vec3 lightTarget(0.f, 0.f, 0.f);
+    glm::vec3 lightUp(0.f, 1.f, 0.f);
+    float lightColor[3] = {1.0, 1.0, 1.0};
+    float lightIntensity = 1.0;
 
     do
     {
@@ -468,7 +521,11 @@ int main( int argc, char **argv )
             guiStates.lockPositionX = mousex;
             guiStates.lockPositionY = mousey;
         }
-  
+
+        //
+        // Render into FrameBuffer
+        //
+
         // Get camera matrices
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 100.f); 
         glm::mat4 worldToView = glm::lookAt(camera.eye, camera.o, camera.up);
@@ -476,16 +533,12 @@ int main( int argc, char **argv )
         glm::mat4 worldToScreen = projection * worldToView;
         glm::mat4 screenToWorld = glm::transpose(glm::inverse(worldToScreen));
 
+        // Render
         glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
         glDrawBuffers(2, gbufferDrawBuffers);
 
-        // Viewport 
-        glViewport( 0, 0, width, height  );
-
-        // Default states
+        glViewport(0, 0, width, height);
         glEnable(GL_DEPTH_TEST);
-
-        // Clear the front buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Bind gbuffer shader
@@ -511,17 +564,18 @@ int main( int argc, char **argv )
         glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         // Compute light positions
-        glm::vec3 lightPosition(5.f, 5.f, 5.f);
-        glm::vec3 lightTarget(0.f, 0.f, 0.f);
-        glm::vec3 lightUp(0.f, 1.f, 0.f);
-        glm::vec3 lightDirection = glm::normalize((lightTarget - lightPosition));
-        float lightColor[3] = {1.0, 1.0, 1.0};
-        float lightIntensity = 1.0;
+        
+
+        //
+        // Render Shadows
+        //
 
         // Build shadow matrices
+        glm::vec3 lightDirection = glm::normalize((lightTarget - lightPosition));
+
         glm::mat4 worldToLight = glm::lookAt(lightPosition, lightDirection, lightUp);
-        //glm::mat4 worldToLight = worldToView;
         glm::mat4 ligthToShadowMap = glm::perspective(60.f, 1.f, 1.f, 1000.f); 
+
         glm::mat4 MAT4F_M1_P1_TO_P0_P1(
             0.5f, 0.f, 0.f, 0.f,
             0.f, 0.5f, 0.f, 0.f,
@@ -530,80 +584,102 @@ int main( int argc, char **argv )
         ); 
         glm::mat4 worldToShadowMap =  MAT4F_M1_P1_TO_P0_P1 * ligthToShadowMap * worldToLight;
 
+        // Draw
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
+
+        glViewport(0, 0, width, height);
+        glEnable(GL_DEPTH_TEST);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Bing ShadowBuffer
+        glUseProgram(shadow_shader.program);
+        glUniformMatrix4fv(shadow_projectionLocation, 1, 0, glm::value_ptr(ligthToShadowMap));
+        glUniformMatrix4fv(shadow_viewLocation, 1, 0, glm::value_ptr(worldToLight));
+        glUniformMatrix4fv(shadow_objectLocation, 1, 0, glm::value_ptr(objectToWorld));
+        glUniform1f(shadow_timeLocation, t);
+        glUniform1i(shadow_diffuseLocation, 0);
+        glUniform1i(shadow_specLocation, 1);
+
+        // Render the scene
+        glBindVertexArray(vao[0]);
+        glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 4);
+        glBindVertexArray(vao[1]);
+        glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+        
+
         // Unbind framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // Viewport 
-        glViewport( 0, 0, width, height );
+        //
+        // Render from framebuffer textures
+        //
 
-        // Clear the front buffer
+        glViewport( 0, 0, width, height );
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Bind lighting shader
         glUseProgram(lighting_shader.program);
-        // Upload uniforms
         glUniform1i(lighting_materialLocation, 0);
         glUniform1i(lighting_normalLocation, 1);
         glUniform1i(lighting_depthLocation, 2);
+        glUniform1i(lighting_shadowmapLocation, 3);
         glUniform3fv(lighting_cameraPositionLocation, 1, glm::value_ptr(camera.eye));
         glUniformMatrix4fv(lighting_inverseViewProjectionLocation, 1, 0, glm::value_ptr(screenToWorld));
+        glUniformMatrix4fv(lighting_worldToShadowmapLocation, 1, 0, glm::value_ptr(worldToShadowMap));
+        glUniform1f(lighting_shadowBiasLocation, shadowBias);
+        glUniform1f(lighting_shadowNumSampleLocation, shadowSamples);
+        glUniform1f(lighting_shadowSpreadLocation, shadowSampleSpread);
 
-        // Bind color to unit 0
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);        
-        // Bind normal to unit 1
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);    
-        // Bind depth to unit 2
         glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);        
+        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, shadowBufferTexture);       
 
-        // Blit above the rest
         glDisable(GL_DEPTH_TEST);
-
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
 
-        // Light uniforms
         glUniform3fv(lighting_lightDirectionLocation, 1, glm::value_ptr(lightDirection));
         glUniform3fv(lighting_lightPositionLocation, 1, glm::value_ptr(lightPosition));
         glUniform3fv(lighting_lightColorLocation, 1, lightColor);
         glUniform1f(lighting_lightIntensityLocation, lightIntensity);
 
-        // Draw quad
         glBindVertexArray(vao[2]);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
 
         glDisable(GL_BLEND);
 
-        // Bind blit shader
+        //
+        // Draw debug quads
+        //
+
         glUseProgram(blit_shader.program);
-        // Upload uniforms
         glUniform1i(blit_tex1Location, 0);
-        // use only unit 0
         glActiveTexture(GL_TEXTURE0);
 
-        // Viewport 
-        glViewport( 0, 0, width/4, height/4  );
-        // Bind texture
+        glViewport(0, 0, width/4, height/4);
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);        
-        // Draw quad
         glBindVertexArray(vao[2]);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        // Viewport 
-        glViewport( width/4, 0, width/4, height/4  );
-        // Bind texture
+
+        glViewport(width/4, 0, width/4, height/4);
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);        
-        // Draw quad
         glBindVertexArray(vao[2]);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        // Viewport 
-        glViewport( width/4 * 2, 0, width/4, height/4  );
-        // Bind texture
+
+        glViewport(width/4 * 2, 0, width/4, height/4);
         glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);        
-        // Draw quad
         glBindVertexArray(vao[2]);
         glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
+        glViewport( width/4 * 3, 0, width/4, height/4);
+        glBindTexture(GL_TEXTURE_2D, shadowBufferTexture);       
+        glBindVertexArray(vao[2]);
+        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+
 #if 1
         // Draw UI
         glDisable(GL_DEPTH_TEST);
@@ -623,13 +699,31 @@ int main( int argc, char **argv )
         imguiBeginFrame(mousex, mousey, mbut, mscroll);
         int logScroll = 0;
         char lineBuffer[512];
-        imguiBeginScrollArea("001", width - 210, height - 310, 200, 300, &logScroll);
+        imguiBeginScrollArea("001", 0, heightf/4, 200, 3*heightf/4, &logScroll);
         sprintf(lineBuffer, "FPS %f", fps);
         imguiLabel(lineBuffer);
         imguiSlider("Lights", &numLights, 0.0, 100.0, 1.0);
         imguiSlider("bias", &shadowBias, 0.0000, 0.1, 0.0005);
-        imguiSlider("samples", &shadowSamples, 1.0, 256.0, 1.0);
+        imguiSlider("samples", &shadowSamples, 1.0, 32.0, 1.0);
         imguiSlider("spread", &shadowSampleSpread, 1.0, 1000.0, 1.0);
+
+        imguiSeparatorLine();
+
+        imguiLabel("Light Position");
+        imguiIndent();
+            imguiSlider("x", &lightPosition.x, -10, 10, 0.01);
+            imguiSlider("y", &lightPosition.y, -10, 10, 0.01);
+            imguiSlider("z", &lightPosition.z, -10, 10, 0.01);
+        imguiUnindent();
+
+        imguiLabel("Light Target");
+        imguiIndent();
+            imguiSlider("x", &lightTarget.x, -10, 10, 0.01);
+            imguiSlider("y", &lightTarget.y, -10, 10, 0.01);
+            imguiSlider("z", &lightTarget.z, -10, 10, 0.01);
+        imguiUnindent();
+
+
         imguiEndScrollArea();
         imguiEndFrame();
         imguiRenderGLDraw(width, height); 
@@ -647,6 +741,8 @@ int main( int argc, char **argv )
 
         // Swap buffers
         glfwSwapBuffers();
+        double newTime = glfwGetTime();
+        fps = 1.f/ (newTime - t);
 
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey( GLFW_KEY_ESC ) != GLFW_PRESS &&
@@ -657,6 +753,8 @@ int main( int argc, char **argv )
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();
+
+
 
     exit( EXIT_SUCCESS );
 }
